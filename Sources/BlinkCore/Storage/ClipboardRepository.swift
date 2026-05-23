@@ -35,6 +35,16 @@ public final class ClipboardRepository: @unchecked Sendable {
         }
     }
 
+    public func record(id: String) throws -> ClipboardItemRecord? {
+        try database.queue.read { db in
+            try ClipboardItemRecord.fetchOne(
+                db,
+                sql: "SELECT * FROM clipboard_items WHERE id = ? AND deleted_at IS NULL",
+                arguments: [id]
+            )
+        }
+    }
+
     public func search(_ text: String, limit: Int) throws -> [ClipboardItemRecord] {
         let query = ftsQuery(for: text)
         guard !query.isEmpty else {
