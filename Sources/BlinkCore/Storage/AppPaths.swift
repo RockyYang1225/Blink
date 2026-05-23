@@ -29,4 +29,12 @@ public struct AppPaths: Sendable {
     public var databaseURL: URL {
         applicationSupportDirectory.appendingPathComponent("Blink.sqlite")
     }
+
+    public var settingsURL: URL {
+        applicationSupportDirectory.appendingPathComponent("settings.json")
+    }
+
+    public var logURL: URL {
+        logsDirectory.appendingPathComponent("blink.log")
+    }
 }

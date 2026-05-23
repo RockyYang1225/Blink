@@ -13,11 +13,23 @@ final class AppShell {
 
     init() {
         let database: BlinkDatabase
+        var paths: AppPaths
+        var logger: DiagnosticsLogger
         do {
-            let paths = try AppPaths.live()
+            paths = try AppPaths.live()
+            logger = DiagnosticsLogger(logURL: paths.logURL)
             database = try BlinkDatabase.at(paths.databaseURL)
         } catch {
+            let fallback = FileManager.default.temporaryDirectory.appendingPathComponent("BlinkFallback", isDirectory: true)
+            paths = AppPaths(applicationSupportDirectory: fallback)
+            logger = DiagnosticsLogger(logURL: paths.logURL)
+            try? logger.append("Fell back to in-memory database: \(error.localizedDescription)")
             database = try! BlinkDatabase.inMemory()
+        }
+
+        let settingsStore = SettingsStore(url: paths.settingsURL)
+        if !FileManager.default.fileExists(atPath: paths.settingsURL.path) {
+            try? settingsStore.save(.defaults)
         }
 
         let clipboardRepository = ClipboardRepository(database: database)
@@ -35,7 +47,15 @@ final class AppShell {
         }
         let menu = MenuBarController(
             onToggleLauncher: { windowController.toggle() },
-            onClearHistory: { try? clipboardRepository.clear() },
+            onClearHistory: {
+                do {
+                    try clipboardRepository.clear()
+                } catch {
+                    try? logger.append("Failed to clear clipboard history: \(error.localizedDescription)")
+                }
+            },
+            onOpenConfig: { NSWorkspace.shared.open(paths.settingsURL) },
+            onOpenLogs: { NSWorkspace.shared.open(paths.logURL) },
             onQuit: { NSApp.terminate(nil) }
         )
         let clipboard = ClipboardService(repository: clipboardRepository)
