@@ -32,6 +32,8 @@ public struct CommandAction: Equatable, Identifiable, Sendable {
     public static let open = CommandAction(id: "open", title: "Open", role: .primary)
     public static let copy = CommandAction(id: "copy", title: "Copy", role: .primary)
     public static let reveal = CommandAction(id: "reveal", title: "Reveal in Finder", role: .secondary)
+    public static let move = CommandAction(id: "move", title: "Move", role: .secondary)
+    public static let rename = CommandAction(id: "rename", title: "Rename", role: .secondary)
 }
 
 public struct CommandResult: Identifiable, Equatable, Sendable {
