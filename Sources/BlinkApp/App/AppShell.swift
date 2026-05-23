@@ -11,7 +11,7 @@ final class AppShell {
     private let clipboardService: ClipboardService?
     private var clipboardTimer: Timer?
 
-    init() {
+    init(showLauncherOnStart: Bool = false) {
         let database: BlinkDatabase
         var paths: AppPaths
         var logger: DiagnosticsLogger
@@ -87,5 +87,20 @@ final class AppShell {
         }
         _ = hotkeyController
         _ = menuBarController
+
+        if showLauncherOnStart {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                try? logger.append("Showing launcher from --show-launcher")
+                windowController.show()
+            }
+        }
+    }
+
+    func showLauncher() {
+        let paths = try? AppPaths.live()
+        if let paths {
+            try? DiagnosticsLogger(logURL: paths.logURL).append("Showing launcher from reopen")
+        }
+        launcherWindowController.show()
     }
 }

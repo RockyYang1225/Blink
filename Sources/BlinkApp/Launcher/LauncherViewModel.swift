@@ -17,6 +17,14 @@ final class LauncherViewModel: ObservableObject {
         self.commandEngine = commandEngine
     }
 
+    func updateQuery(_ newValue: String) {
+        guard query != newValue else {
+            return
+        }
+        query = newValue
+        queryDidChange()
+    }
+
     var selectedResult: CommandResult? {
         guard results.indices.contains(selectedIndex) else {
             return nil

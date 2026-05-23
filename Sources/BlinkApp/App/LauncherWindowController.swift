@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor
 final class LauncherWindowController {
-    private let panel: NSPanel
+    private let panel: LauncherPanel
     private let viewModel: LauncherViewModel
     private var keyMonitor: Any?
 
@@ -11,15 +11,15 @@ final class LauncherWindowController {
         let rootView = LauncherView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: rootView)
 
-        panel = NSPanel(
+        panel = LauncherPanel(
             contentRect: NSRect(x: 0, y: 0, width: 680, height: 420),
-            styleMask: [.nonactivatingPanel, .fullSizeContentView],
+            styleMask: [.titled, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         panel.contentViewController = hostingController
         panel.isFloatingPanel = true
-        panel.level = .floating
+        panel.level = .normal
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
@@ -36,7 +36,13 @@ final class LauncherWindowController {
         positionOnActiveScreen()
         installKeyMonitor()
         NSApp.activate(ignoringOtherApps: true)
-        panel.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async { [panel] in
+            panel.deminiaturize(nil)
+            panel.setIsVisible(true)
+            panel.makeKeyAndOrderFront(nil)
+            panel.orderFrontRegardless()
+            panel.makeKey()
+        }
     }
 
     func hide() {
@@ -99,16 +105,26 @@ final class LauncherWindowController {
     }
 
     private func positionOnActiveScreen() {
-        let screen = NSScreen.main ?? NSScreen.screens.first
+        let screen = NSScreen.screens.sorted { lhs, rhs in
+            if lhs.frame.minX == rhs.frame.minX {
+                return lhs.frame.minY < rhs.frame.minY
+            }
+            return lhs.frame.minX < rhs.frame.minX
+        }.first ?? NSScreen.main ?? NSScreen.screens.first
         guard let frame = screen?.visibleFrame else {
             return
         }
 
         let size = panel.frame.size
         let origin = NSPoint(
-            x: frame.midX - size.width / 2,
+            x: 80,
             y: frame.maxY - size.height - 120
         )
         panel.setFrameOrigin(origin)
     }
+}
+
+private final class LauncherPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
 }

@@ -7,14 +7,17 @@ struct LauncherView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TextField("Search commands, clipboard, files...", text: $viewModel.query)
+            TextField(
+                "Search commands, clipboard, files...",
+                text: Binding(
+                    get: { viewModel.query },
+                    set: { viewModel.updateQuery($0) }
+                )
+            )
                 .textFieldStyle(.plain)
                 .font(.system(size: 26, weight: .regular, design: .default))
                 .padding(20)
                 .focused($isFocused)
-                .onChange(of: viewModel.query) {
-                    viewModel.queryDidChange()
-                }
                 .onSubmit {
                     viewModel.executeSelected()
                 }

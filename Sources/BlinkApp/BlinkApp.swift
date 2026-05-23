@@ -17,6 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        shell = AppShell()
+        shell = AppShell(showLauncherOnStart: CommandLine.arguments.contains("--show-launcher"))
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        shell?.showLauncher()
+        return true
     }
 }
