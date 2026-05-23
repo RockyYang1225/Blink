@@ -46,6 +46,20 @@ Useful cleanup while iterating:
 rtk proxy pkill -f '/Blink.app/Contents/MacOS/Blink'
 ```
 
+## Foreground Checklist
+
+Use this checklist from the actual macOS desktop session:
+
+1. Launch `.build/Blink.app`.
+2. Press `Option-Space`; the Blink launcher should appear.
+3. Type `now`; timestamp results should show.
+4. Press `Return`; the selected timestamp should be copied to the clipboard.
+5. Press `Option-Space` again or `Esc`; the launcher should hide.
+6. Copy a text snippet, reopen Blink, and search for that snippet.
+7. Use the menu bar item to pause/resume clipboard recording.
+8. Use the menu bar item to clear history, then confirm clipboard search no longer returns old entries.
+9. Search for a known file from Desktop, Documents, or Downloads; test open/reveal actions.
+
 ## Local Data
 
 Blink writes local development data to:
