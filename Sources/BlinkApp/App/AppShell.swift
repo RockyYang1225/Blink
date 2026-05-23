@@ -65,6 +65,10 @@ final class AppShell {
                     try? logger.append("Failed to clear clipboard history: \(error.localizedDescription)")
                 }
             },
+            onOpenSettings: {
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            },
             onOpenConfig: { NSWorkspace.shared.open(paths.settingsURL) },
             onOpenLogs: { NSWorkspace.shared.open(paths.logURL) },
             onQuit: { NSApp.terminate(nil) }

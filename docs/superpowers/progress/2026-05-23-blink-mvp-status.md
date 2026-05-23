@@ -17,6 +17,7 @@ Worktree: `/Users/rockyyang/Blink/.worktrees/blink-mvp`
 - File provider for Desktop, Documents, Downloads, and injected test roots.
 - App provider for installed application search and launch.
 - Settings store for hotkey name, clipboard recording, retention, cache limits, and exclusions.
+- Settings window for hotkey recording, clipboard retention, cache limit, and exclusions.
 - Diagnostics logger for local append-only logs.
 - macOS menu bar app shell with launcher window, menu actions, clipboard polling, hotkey controller, and startup `--show-launcher` verification path.
 - SwiftUI launcher UI with keyboard navigation, secondary action mode, execution status, and compact result list.

@@ -13,6 +13,7 @@ Blink is a macOS-native Alfred-like launcher prototype.
 - Clipboard capture path for text, images, and file URLs.
 - File action service for open, reveal, copy, move, and rename validation.
 - Settings JSON and local diagnostics log.
+- Settings window for hotkey recording, clipboard retention, cache limit, and exclusions.
 - Debug `.app` packaging script.
 
 ## Build And Test
@@ -59,6 +60,7 @@ Use this checklist from the actual macOS desktop session:
 7. Use the menu bar item to pause/resume clipboard recording.
 8. Use the menu bar item to clear history, then confirm clipboard search no longer returns old entries.
 9. Search for a known file from Desktop, Documents, or Downloads; test open/reveal actions.
+10. Open the Settings window and confirm hotkey/clipboard changes are saved.
 
 ## Local Data
 

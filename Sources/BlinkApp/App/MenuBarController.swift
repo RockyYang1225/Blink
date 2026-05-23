@@ -9,6 +9,7 @@ final class MenuBarController {
         onToggleLauncher: @escaping @MainActor () -> Void,
         onToggleClipboardRecording: @escaping @MainActor () -> Bool,
         onClearHistory: @escaping @MainActor () -> Void,
+        onOpenSettings: @escaping @MainActor () -> Void,
         onOpenConfig: @escaping @MainActor () -> Void,
         onOpenLogs: @escaping @MainActor () -> Void,
         onQuit: @escaping @MainActor () -> Void
@@ -21,6 +22,8 @@ final class MenuBarController {
         let recordingItem = NSMenuItem(title: "", action: #selector(toggleClipboardRecording), keyEquivalent: "")
         menu.addItem(recordingItem)
         menu.addItem(NSMenuItem(title: "Clear Clipboard History", action: #selector(clearHistory), keyEquivalent: ""))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Open Settings", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "Open Config", action: #selector(openConfig), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Open Logs", action: #selector(openLogs), keyEquivalent: ""))
         menu.addItem(.separator())
@@ -31,6 +34,7 @@ final class MenuBarController {
         self.onToggleLauncher = onToggleLauncher
         self.onToggleClipboardRecording = onToggleClipboardRecording
         self.onClearHistory = onClearHistory
+        self.onOpenSettings = onOpenSettings
         self.onOpenConfig = onOpenConfig
         self.onOpenLogs = onOpenLogs
         self.onQuit = onQuit
@@ -45,6 +49,7 @@ final class MenuBarController {
     private let onToggleLauncher: @MainActor () -> Void
     private let onToggleClipboardRecording: @MainActor () -> Bool
     private let onClearHistory: @MainActor () -> Void
+    private let onOpenSettings: @MainActor () -> Void
     private let onOpenConfig: @MainActor () -> Void
     private let onOpenLogs: @MainActor () -> Void
     private let onQuit: @MainActor () -> Void
@@ -60,6 +65,10 @@ final class MenuBarController {
     @objc private func toggleClipboardRecording() {
         let isEnabled = onToggleClipboardRecording()
         updateClipboardRecordingTitle(isEnabled: isEnabled)
+    }
+
+    @objc private func openSettings() {
+        onOpenSettings()
     }
 
     @objc private func openConfig() {
