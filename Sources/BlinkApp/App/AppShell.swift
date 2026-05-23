@@ -28,8 +28,9 @@ final class AppShell {
         }
 
         let settingsStore = SettingsStore(url: paths.settingsURL)
+        var settings = (try? settingsStore.load()) ?? .defaults
         if !FileManager.default.fileExists(atPath: paths.settingsURL.path) {
-            try? settingsStore.save(.defaults)
+            try? settingsStore.save(settings)
         }
 
         let clipboardRepository = ClipboardRepository(database: database)
@@ -46,7 +47,17 @@ final class AppShell {
             windowController.toggle()
         }
         let menu = MenuBarController(
+            clipboardRecordingEnabled: settings.clipboardRecordingEnabled,
             onToggleLauncher: { windowController.toggle() },
+            onToggleClipboardRecording: {
+                settings.clipboardRecordingEnabled.toggle()
+                do {
+                    try settingsStore.save(settings)
+                } catch {
+                    try? logger.append("Failed to save clipboard recording state: \(error.localizedDescription)")
+                }
+                return settings.clipboardRecordingEnabled
+            },
             onClearHistory: {
                 do {
                     try clipboardRepository.clear()
@@ -67,6 +78,10 @@ final class AppShell {
         clipboardService = clipboard
         clipboardTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak clipboard] _ in
             Task { @MainActor in
+                let currentSettings = (try? settingsStore.load()) ?? settings
+                guard currentSettings.clipboardRecordingEnabled else {
+                    return
+                }
                 try? clipboard?.captureIfChanged()
             }
         }
