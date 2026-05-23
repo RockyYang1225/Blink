@@ -27,6 +27,10 @@ struct LauncherView: View {
                 resultList
             }
 
+            if viewModel.isShowingSecondaryActions {
+                secondaryActionsView
+            }
+
             if let statusMessage = viewModel.statusMessage {
                 Divider()
                 Text(statusMessage)
@@ -78,5 +82,24 @@ struct LauncherView: View {
             }
         }
         .listStyle(.plain)
+    }
+
+    private var secondaryActionsView: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 8) {
+                ForEach(Array(viewModel.secondaryActions.enumerated()), id: \.element.id) { index, action in
+                    Text(action.title)
+                        .font(.caption)
+                        .fontWeight(index == viewModel.selectedActionIndex ? .semibold : .regular)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(index == viewModel.selectedActionIndex ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                Spacer()
+            }
+            .padding(12)
+        }
     }
 }

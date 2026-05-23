@@ -37,7 +37,7 @@ final class AppShell {
         let commandEngine = CommandEngine(providers: [
             AppProvider(),
             ClipboardProvider(repository: clipboardRepository, writer: SystemClipboardWriter()),
-            TimestampProvider(),
+            TimestampProvider(writer: SystemClipboardWriter()),
             FileProvider()
         ])
 

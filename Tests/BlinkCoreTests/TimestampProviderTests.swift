@@ -29,7 +29,8 @@ final class TimestampProviderTests: XCTestCase {
     }
 
     func testExecuteCopiesTextPayload() async {
-        let provider = TimestampProvider(calendar: .gregorianUTC)
+        let writer = CapturingTimestampWriter()
+        let provider = TimestampProvider(calendar: .gregorianUTC, writer: writer)
         let result = CommandResult(
             id: "x",
             providerID: provider.id,
@@ -43,6 +44,16 @@ final class TimestampProviderTests: XCTestCase {
         let execution = await provider.execute(result, action: .copy)
 
         XCTAssertEqual(execution, .success(message: "Copied Value"))
+        XCTAssertEqual(writer.text, "Value")
+    }
+}
+
+private final class CapturingTimestampWriter: ClipboardWriting, @unchecked Sendable {
+    private(set) var text: String?
+
+    func writeText(_ text: String) async -> Bool {
+        self.text = text
+        return true
     }
 }
 

@@ -1,15 +1,27 @@
 import Foundation
 
-public struct FileProvider: CommandProvider {
+public struct FileProvider: CommandProvider, @unchecked Sendable {
     public let id = "file"
     public let displayName = "Files"
 
     private let fileURLs: [URL]
+    private let searchRoots: [URL]
+    private let maxDepth: Int
     private let fileActions: FileActionService
+    private let fileManager: FileManager
 
-    public init(fileURLs: [URL] = [], fileActions: FileActionService = FileActionService()) {
+    public init(
+        fileURLs: [URL] = [],
+        searchRoots: [URL] = FileProvider.defaultSearchRoots(),
+        maxDepth: Int = 2,
+        fileActions: FileActionService = FileActionService(),
+        fileManager: FileManager = .default
+    ) {
         self.fileURLs = fileURLs
+        self.searchRoots = searchRoots
+        self.maxDepth = maxDepth
         self.fileActions = fileActions
+        self.fileManager = fileManager
     }
 
     public func search(_ query: CommandQuery) async -> [CommandResult] {
@@ -17,7 +29,7 @@ public struct FileProvider: CommandProvider {
             return []
         }
 
-        return fileURLs
+        return candidateURLs()
             .filter { $0.lastPathComponent.localizedCaseInsensitiveContains(query.text) }
             .prefix(20)
             .map { url in
@@ -47,5 +59,59 @@ public struct FileProvider: CommandProvider {
         default:
             return .validationFailed("File action \(action.id) needs more input")
         }
+    }
+
+    private func candidateURLs() -> [URL] {
+        var seen = Set<String>()
+        var urls: [URL] = []
+
+        for url in fileURLs + scanRoots() {
+            guard !url.lastPathComponent.hasPrefix(".") else {
+                continue
+            }
+            guard seen.insert(url.path).inserted else {
+                continue
+            }
+            urls.append(url)
+        }
+
+        return urls
+    }
+
+    private func scanRoots() -> [URL] {
+        searchRoots.flatMap { scan(root: $0, depth: 0) }
+    }
+
+    private func scan(root: URL, depth: Int) -> [URL] {
+        guard depth <= maxDepth else {
+            return []
+        }
+
+        guard let children = try? fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else {
+            return []
+        }
+
+        var urls: [URL] = []
+        for child in children {
+            urls.append(child)
+            let isDirectory = (try? child.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            if isDirectory {
+                urls.append(contentsOf: scan(root: child, depth: depth + 1))
+            }
+        }
+        return urls
+    }
+
+    public static func defaultSearchRoots() -> [URL] {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            home.appendingPathComponent("Desktop", isDirectory: true),
+            home.appendingPathComponent("Documents", isDirectory: true),
+            home.appendingPathComponent("Downloads", isDirectory: true)
+        ]
     }
 }

@@ -5,9 +5,11 @@ public struct TimestampProvider: CommandProvider {
     public let displayName = "Timestamp"
 
     private let calendar: Calendar
+    private let writer: any ClipboardWriting
 
-    public init(calendar: Calendar = .current) {
+    public init(calendar: Calendar = .current, writer: any ClipboardWriting = NoopClipboardWriter()) {
         self.calendar = calendar
+        self.writer = writer
     }
 
     public func search(_ query: CommandQuery) async -> [CommandResult] {
@@ -38,7 +40,10 @@ public struct TimestampProvider: CommandProvider {
             return .validationFailed("Timestamp result has no text payload")
         }
 
-        return .success(message: "Copied \(value)")
+        let didWrite = await writer.writeText(value)
+        return didWrite
+            ? .success(message: "Copied \(value)")
+            : .failed("System clipboard rejected timestamp")
     }
 
     private func result(for date: Date, source: String, score: Double) -> CommandResult {

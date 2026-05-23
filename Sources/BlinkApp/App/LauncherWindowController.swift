@@ -4,6 +4,7 @@ import SwiftUI
 final class LauncherWindowController {
     private let panel: NSPanel
     private let viewModel: LauncherViewModel
+    private var keyMonitor: Any?
 
     init(viewModel: LauncherViewModel) {
         self.viewModel = viewModel
@@ -33,13 +34,68 @@ final class LauncherWindowController {
 
     func show() {
         positionOnActiveScreen()
+        installKeyMonitor()
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
     }
 
     func hide() {
+        removeKeyMonitor()
         panel.orderOut(nil)
         viewModel.clearTransientState()
+    }
+
+    private func installKeyMonitor() {
+        guard keyMonitor == nil else {
+            return
+        }
+
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.panel.isVisible, event.window === self.panel else {
+                return event
+            }
+
+            return self.handleKeyDown(event) ? nil : event
+        }
+    }
+
+    private func removeKeyMonitor() {
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+        }
+        keyMonitor = nil
+    }
+
+    private func handleKeyDown(_ event: NSEvent) -> Bool {
+        let commandPressed = event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command)
+
+        switch event.keyCode {
+        case 53:
+            if !viewModel.hideSecondaryActions() {
+                hide()
+            }
+            return true
+        case 125:
+            viewModel.moveSelection(delta: 1)
+            return true
+        case 126:
+            viewModel.moveSelection(delta: -1)
+            return true
+        case 36:
+            if viewModel.isShowingSecondaryActions {
+                viewModel.executeSelectedSecondaryAction()
+            } else if commandPressed {
+                viewModel.showSecondaryActions()
+            } else {
+                viewModel.executeSelected()
+            }
+            return true
+        case 48:
+            viewModel.showSecondaryActions()
+            return true
+        default:
+            return false
+        }
     }
 
     private func positionOnActiveScreen() {
