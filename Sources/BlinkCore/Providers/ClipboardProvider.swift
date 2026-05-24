@@ -15,7 +15,9 @@ public struct ClipboardProvider: CommandProvider {
     public func search(_ query: CommandQuery) async -> [CommandResult] {
         do {
             let records = try repository.search(query.text, limit: 20)
-            return records.map(result)
+            return records.enumerated().map { index, record in
+                result(for: record, score: max(0.5, 0.9 - (Double(index) * 0.01)))
+            }
         } catch {
             return [
                 CommandResult(
@@ -57,13 +59,13 @@ public struct ClipboardProvider: CommandProvider {
         }
     }
 
-    private func result(for record: ClipboardItemRecord) -> CommandResult {
+    private func result(for record: ClipboardItemRecord, score: Double) -> CommandResult {
         CommandResult(
             id: "clipboard-\(record.id)",
             providerID: id,
             title: record.previewText,
             subtitle: subtitle(for: record),
-            score: record.pinned ? 0.95 : 0.7,
+            score: score,
             primaryAction: .copy,
             secondaryActions: [],
             payload: .clipboardItem(record.id)

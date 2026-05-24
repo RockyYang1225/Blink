@@ -23,6 +23,29 @@ final class ClipboardProviderTests: XCTestCase {
         XCTAssertEqual(results.first?.primaryAction, .copy)
     }
 
+    func testSearchScoresFollowRepositoryOrderSoNewestStaysFirst() async throws {
+        let repository = try makeRepository()
+        try repository.insert(record(
+            id: "older-pinned",
+            previewText: "A older token",
+            searchableText: "token older",
+            createdAt: Date(timeIntervalSince1970: 1),
+            pinned: true
+        ))
+        try repository.insert(record(
+            id: "newer",
+            previewText: "Z newer token",
+            searchableText: "token newer",
+            createdAt: Date(timeIntervalSince1970: 2)
+        ))
+        let provider = ClipboardProvider(repository: repository, writer: CapturingClipboardWriter())
+
+        let results = await provider.search(CommandQuery(text: "token"))
+
+        XCTAssertEqual(results.map(\.id), ["clipboard-newer", "clipboard-older-pinned"])
+        XCTAssertGreaterThan(results[0].score, results[1].score)
+    }
+
     func testExecuteCopiesTextBackToClipboardWriter() async throws {
         let repository = try makeRepository()
         try repository.insert(record(id: "clip-1", previewText: "Secret token", searchableText: "secret token"))
@@ -50,6 +73,16 @@ final class ClipboardProviderTests: XCTestCase {
     }
 
     private func record(id: String, previewText: String, searchableText: String) -> ClipboardItemRecord {
+        record(id: id, previewText: previewText, searchableText: searchableText, createdAt: Date(timeIntervalSince1970: 1))
+    }
+
+    private func record(
+        id: String,
+        previewText: String,
+        searchableText: String,
+        createdAt: Date,
+        pinned: Bool = false
+    ) -> ClipboardItemRecord {
         ClipboardItemRecord(
             id: id,
             contentType: .text,
@@ -58,9 +91,9 @@ final class ClipboardProviderTests: XCTestCase {
             contentHash: "hash-\(id)",
             sourceAppBundleID: nil,
             sourceAppName: nil,
-            createdAt: Date(timeIntervalSince1970: 1),
+            createdAt: createdAt,
             lastUsedAt: nil,
-            pinned: false,
+            pinned: pinned,
             sizeBytes: Int64(searchableText.utf8.count),
             cachePath: nil,
             originalFileURL: nil,
