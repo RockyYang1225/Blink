@@ -8,7 +8,7 @@ struct LauncherView: View {
     var body: some View {
         VStack(spacing: 0) {
             TextField(
-                "Search commands, clipboard, files...",
+                viewModel.searchPlaceholder,
                 text: Binding(
                     get: { viewModel.query },
                     set: { viewModel.updateQuery($0) }
@@ -24,7 +24,9 @@ struct LauncherView: View {
 
             Divider()
 
-            if viewModel.results.isEmpty {
+            if viewModel.isShowingFeatureOptions {
+                featureOptionsList
+            } else if viewModel.results.isEmpty {
                 emptyState
             } else {
                 resultList
@@ -55,10 +57,50 @@ struct LauncherView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            Text(viewModel.query.isEmpty ? "No clipboard history yet" : "No results")
+            Text(emptyStateText)
                 .foregroundStyle(.secondary)
             Spacer()
         }
+    }
+
+    private var emptyStateText: String {
+        if let feature = viewModel.activeFeature, viewModel.query.isEmpty {
+            return "Type to use \(feature.title)"
+        }
+        return "No results"
+    }
+
+    private var featureOptionsList: some View {
+        List(Array(viewModel.featureOptions.enumerated()), id: \.element.id) { index, feature in
+            HStack(spacing: 12) {
+                Image(systemName: feature.symbolName)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(index == viewModel.selectedFeatureIndex ? Color.accentColor : Color.secondary)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(feature.title)
+                        .font(.system(size: 15, weight: .medium))
+                        .lineLimit(1)
+                    Text(feature.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Text("Open")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 7)
+            .listRowBackground(index == viewModel.selectedFeatureIndex ? Color.accentColor.opacity(0.16) : Color.clear)
+            .onTapGesture {
+                viewModel.activateFeature(at: index)
+            }
+        }
+        .listStyle(.plain)
     }
 
     private var resultList: some View {

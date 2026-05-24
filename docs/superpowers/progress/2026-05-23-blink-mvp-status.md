@@ -13,7 +13,7 @@ Worktree: `/Users/rockyyang/Blink/.worktrees/blink-mvp`
 - Clipboard capture service for text, image metadata/cache path, and file URL references.
 - Clipboard retention policy for count, age, and cache byte limits.
 - Clipboard history provider for search and copy-back.
-- Launcher presentation now refreshes an empty query so recent clipboard history is visible immediately.
+- Launcher home screen with feature options for clipboard history, timestamp conversion, file search, and applications.
 - File action service with validation for open, reveal, copy, move, and rename.
 - File provider for Desktop, Documents, Downloads, and injected test roots.
 - App provider for installed application search and launch.

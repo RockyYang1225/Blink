@@ -6,6 +6,9 @@ final class LauncherViewModel: ObservableObject {
     @Published var query = ""
     @Published private(set) var results: [CommandResult] = []
     @Published private(set) var selectedIndex = 0
+    @Published private(set) var featureOptions = LauncherFeature.defaults
+    @Published private(set) var selectedFeatureIndex = 0
+    @Published private(set) var activeFeature: LauncherFeature?
     @Published private(set) var isShowingSecondaryActions = false
     @Published private(set) var selectedActionIndex = 0
     @Published private(set) var statusMessage: String?
@@ -23,6 +26,21 @@ final class LauncherViewModel: ObservableObject {
         }
         query = newValue
         queryDidChange()
+    }
+
+    var isShowingFeatureOptions: Bool {
+        activeFeature == nil && query.isEmpty
+    }
+
+    var searchPlaceholder: String {
+        activeFeature?.placeholder ?? "Search commands, clipboard, files..."
+    }
+
+    var selectedFeature: LauncherFeature? {
+        guard featureOptions.indices.contains(selectedFeatureIndex) else {
+            return nil
+        }
+        return featureOptions[selectedFeatureIndex]
     }
 
     var selectedResult: CommandResult? {
@@ -46,27 +64,48 @@ final class LauncherViewModel: ObservableObject {
     func queryDidChange() {
         searchTask?.cancel()
         let currentQuery = CommandQuery(text: query)
+        if activeFeature == nil && currentQuery.isEmpty {
+            results = []
+            selectedIndex = 0
+            selectedFeatureIndex = 0
+            isShowingSecondaryActions = false
+            selectedActionIndex = 0
+            statusMessage = nil
+            return
+        }
+
+        let providerID = activeFeature?.providerID
         searchTask = Task { [commandEngine] in
             let matches = await commandEngine.search(currentQuery)
             guard !Task.isCancelled else {
                 return
             }
             await MainActor.run {
-                self.apply(matches: matches, for: currentQuery)
+                self.apply(matches: self.filtered(matches, providerID: providerID), for: currentQuery)
             }
         }
     }
 
     func refreshForPresentation() async {
         searchTask?.cancel()
-        let currentQuery = CommandQuery(text: query)
-        let matches = await commandEngine.search(currentQuery)
-        apply(matches: matches, for: currentQuery)
+        activeFeature = nil
+        query = ""
+        results = []
+        selectedIndex = 0
+        selectedFeatureIndex = 0
+        isShowingSecondaryActions = false
+        selectedActionIndex = 0
+        statusMessage = nil
     }
 
     func moveSelection(delta: Int) {
         if isShowingSecondaryActions {
             moveActionSelection(delta: delta)
+            return
+        }
+
+        if isShowingFeatureOptions {
+            selectedFeatureIndex = min(max(selectedFeatureIndex + delta, 0), featureOptions.count - 1)
             return
         }
 
@@ -107,6 +146,13 @@ final class LauncherViewModel: ObservableObject {
     }
 
     func executeSelected() {
+        if isShowingFeatureOptions {
+            Task {
+                await activateSelectedFeature()
+            }
+            return
+        }
+
         guard let result = selectedResult else {
             return
         }
@@ -137,9 +183,54 @@ final class LauncherViewModel: ObservableObject {
         query = ""
         results = []
         selectedIndex = 0
+        selectedFeatureIndex = 0
+        activeFeature = nil
         isShowingSecondaryActions = false
         selectedActionIndex = 0
         statusMessage = nil
+    }
+
+    func activateSelectedFeature() async {
+        guard let feature = selectedFeature else {
+            return
+        }
+        await activate(feature)
+    }
+
+    func activateFeature(at index: Int) {
+        guard featureOptions.indices.contains(index) else {
+            return
+        }
+        selectedFeatureIndex = index
+        Task {
+            await activateSelectedFeature()
+        }
+    }
+
+    func exitFeature() -> Bool {
+        guard activeFeature != nil else {
+            return false
+        }
+        activeFeature = nil
+        query = ""
+        results = []
+        selectedIndex = 0
+        selectedActionIndex = 0
+        isShowingSecondaryActions = false
+        statusMessage = nil
+        return true
+    }
+
+    private func activate(_ feature: LauncherFeature) async {
+        searchTask?.cancel()
+        activeFeature = feature
+        query = feature.defaultQuery
+        selectedIndex = 0
+        selectedActionIndex = 0
+        isShowingSecondaryActions = false
+        let currentQuery = CommandQuery(text: query)
+        let matches = await commandEngine.search(currentQuery)
+        apply(matches: filtered(matches, providerID: feature.providerID), for: currentQuery)
     }
 
     private func apply(matches: [CommandResult], for query: CommandQuery) {
@@ -148,6 +239,13 @@ final class LauncherViewModel: ObservableObject {
         isShowingSecondaryActions = false
         selectedActionIndex = 0
         statusMessage = matches.isEmpty && !query.isEmpty ? "No results" : nil
+    }
+
+    private func filtered(_ matches: [CommandResult], providerID: String?) -> [CommandResult] {
+        guard let providerID else {
+            return matches
+        }
+        return matches.filter { $0.providerID == providerID }
     }
 }
 

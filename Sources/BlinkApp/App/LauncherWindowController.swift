@@ -80,9 +80,13 @@ final class LauncherWindowController {
 
         switch event.keyCode {
         case 53:
-            if !viewModel.hideSecondaryActions() {
-                hide()
+            if viewModel.hideSecondaryActions() {
+                return true
             }
+            if viewModel.exitFeature() {
+                return true
+            }
+            hide()
             return true
         case 125:
             viewModel.moveSelection(delta: 1)

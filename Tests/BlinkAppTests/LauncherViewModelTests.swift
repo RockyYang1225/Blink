@@ -3,8 +3,8 @@ import XCTest
 import BlinkCore
 
 private struct EmptyQueryProvider: CommandProvider {
-    let id = "empty-query"
-    let displayName = "Empty Query"
+    let id = "clipboard"
+    let displayName = "Clipboard"
 
     func search(_ query: CommandQuery) async -> [CommandResult] {
         guard query.isEmpty else {
@@ -31,14 +31,46 @@ private struct EmptyQueryProvider: CommandProvider {
 
 @MainActor
 final class LauncherViewModelTests: XCTestCase {
-    func testRefreshForPresentationLoadsEmptyQueryResults() async {
+    func testRefreshForPresentationShowsFeatureOptions() async {
         let engine = CommandEngine(providers: [EmptyQueryProvider()])
         let viewModel = LauncherViewModel(commandEngine: engine)
 
         await viewModel.refreshForPresentation()
 
+        XCTAssertTrue(viewModel.isShowingFeatureOptions)
+        XCTAssertEqual(viewModel.featureOptions.map(\.title), [
+            "Clipboard History",
+            "Timestamp Converter",
+            "File Search",
+            "Applications"
+        ])
+        XCTAssertEqual(viewModel.results, [])
+    }
+
+    func testActivatingClipboardHistoryLoadsRecentClipboardResults() async {
+        let engine = CommandEngine(providers: [EmptyQueryProvider()])
+        let viewModel = LauncherViewModel(commandEngine: engine)
+
+        await viewModel.refreshForPresentation()
+        await viewModel.activateSelectedFeature()
+
+        XCTAssertFalse(viewModel.isShowingFeatureOptions)
+        XCTAssertEqual(viewModel.activeFeature?.title, "Clipboard History")
         XCTAssertEqual(viewModel.results.map(\.title), ["Recent clipboard text"])
         XCTAssertEqual(viewModel.selectedIndex, 0)
         XCTAssertNil(viewModel.statusMessage)
+    }
+
+    func testEscapeFromFeatureReturnsToFeatureOptions() async {
+        let engine = CommandEngine(providers: [EmptyQueryProvider()])
+        let viewModel = LauncherViewModel(commandEngine: engine)
+
+        await viewModel.refreshForPresentation()
+        await viewModel.activateSelectedFeature()
+
+        XCTAssertTrue(viewModel.exitFeature())
+        XCTAssertTrue(viewModel.isShowingFeatureOptions)
+        XCTAssertNil(viewModel.activeFeature)
+        XCTAssertEqual(viewModel.results, [])
     }
 }
