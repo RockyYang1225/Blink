@@ -52,13 +52,16 @@ final class LauncherViewModel: ObservableObject {
                 return
             }
             await MainActor.run {
-                self.results = matches
-                self.selectedIndex = 0
-                self.isShowingSecondaryActions = false
-                self.selectedActionIndex = 0
-                self.statusMessage = matches.isEmpty && !currentQuery.isEmpty ? "No results" : nil
+                self.apply(matches: matches, for: currentQuery)
             }
         }
+    }
+
+    func refreshForPresentation() async {
+        searchTask?.cancel()
+        let currentQuery = CommandQuery(text: query)
+        let matches = await commandEngine.search(currentQuery)
+        apply(matches: matches, for: currentQuery)
     }
 
     func moveSelection(delta: Int) {
@@ -137,6 +140,14 @@ final class LauncherViewModel: ObservableObject {
         isShowingSecondaryActions = false
         selectedActionIndex = 0
         statusMessage = nil
+    }
+
+    private func apply(matches: [CommandResult], for query: CommandQuery) {
+        results = matches
+        selectedIndex = 0
+        isShowingSecondaryActions = false
+        selectedActionIndex = 0
+        statusMessage = matches.isEmpty && !query.isEmpty ? "No results" : nil
     }
 }
 

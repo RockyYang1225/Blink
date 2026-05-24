@@ -9,6 +9,7 @@ Blink is a macOS-native Alfred-like launcher prototype.
 - Internal `CommandProvider` and `CommandEngine` architecture.
 - Timestamp conversion command.
 - Clipboard history storage with GRDB/SQLite and FTS search.
+- Launcher opens directly into recent clipboard history.
 - Text clipboard copy-back.
 - Clipboard capture path for text, images, and file URLs.
 - File action service for open, reveal, copy, move, and rename validation.
@@ -56,11 +57,12 @@ Use this checklist from the actual macOS desktop session:
 3. Type `now`; timestamp results should show.
 4. Press `Return`; the selected timestamp should be copied to the clipboard.
 5. Press `Option-Space` again or `Esc`; the launcher should hide.
-6. Copy a text snippet, reopen Blink, and search for that snippet.
-7. Use the menu bar item to pause/resume clipboard recording.
-8. Use the menu bar item to clear history, then confirm clipboard search no longer returns old entries.
-9. Search for a known file from Desktop, Documents, or Downloads; test open/reveal actions.
-10. Open the Settings window and confirm hotkey/clipboard changes are saved.
+6. Copy a text snippet, reopen Blink, and confirm recent clipboard history appears immediately.
+7. Type part of that snippet to filter history, then press `Return` to copy the selected entry back.
+8. Use the menu bar item to pause/resume clipboard recording.
+9. Use the menu bar item to clear history, then confirm clipboard search no longer returns old entries.
+10. Search for a known file from Desktop, Documents, or Downloads; test open/reveal actions.
+11. Open the Settings window and confirm hotkey/clipboard changes are saved.
 
 ## Local Data
 

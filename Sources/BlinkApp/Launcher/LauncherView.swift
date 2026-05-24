@@ -55,7 +55,7 @@ struct LauncherView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            Text(viewModel.query.isEmpty ? "Start typing" : "No results")
+            Text(viewModel.query.isEmpty ? "No clipboard history yet" : "No results")
                 .foregroundStyle(.secondary)
             Spacer()
         }

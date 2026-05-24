@@ -32,6 +32,11 @@ let package = Package(
             name: "BlinkCoreTests",
             dependencies: ["BlinkCore"],
             path: "Tests/BlinkCoreTests"
+        ),
+        .testTarget(
+            name: "BlinkAppTests",
+            dependencies: ["BlinkApp", "BlinkCore"],
+            path: "Tests/BlinkAppTests"
         )
     ]
 )

@@ -35,6 +35,9 @@ final class LauncherWindowController {
     func show() {
         positionOnActiveScreen()
         installKeyMonitor()
+        Task { [viewModel] in
+            await viewModel.refreshForPresentation()
+        }
         NSApp.activate(ignoringOtherApps: true)
         DispatchQueue.main.async { [panel] in
             panel.deminiaturize(nil)
