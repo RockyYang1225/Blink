@@ -43,6 +43,9 @@ final class AppShell {
 
         let viewModel = LauncherViewModel(commandEngine: commandEngine)
         let windowController = LauncherWindowController(viewModel: viewModel)
+        viewModel.onClipboardPasteRequested = { [weak windowController] _ in
+            windowController?.pasteIntoReturnApplication() ?? false
+        }
         let hotkey = HotkeyController {
             windowController.toggle()
         }

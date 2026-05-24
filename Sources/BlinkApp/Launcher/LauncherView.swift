@@ -99,7 +99,9 @@ struct LauncherView: View {
                 .padding(.vertical, 7)
                 .listRowBackground(index == viewModel.selectedFeatureIndex ? Color.accentColor.opacity(0.16) : Color.clear)
                 .onTapGesture {
-                    viewModel.activateFeature(at: index)
+                    Task {
+                        await viewModel.activateFeature(at: index)
+                    }
                 }
             }
             .listStyle(.plain)

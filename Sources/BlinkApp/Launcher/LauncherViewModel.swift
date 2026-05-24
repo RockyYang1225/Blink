@@ -15,6 +15,7 @@ final class LauncherViewModel: ObservableObject {
 
     private let commandEngine: CommandEngine
     private var searchTask: Task<Void, Never>?
+    var onClipboardPasteRequested: ((CommandResult) -> Bool)?
 
     init(commandEngine: CommandEngine) {
         self.commandEngine = commandEngine
@@ -161,6 +162,12 @@ final class LauncherViewModel: ObservableObject {
             let execution = await commandEngine.execute(result, action: result.primaryAction)
             await MainActor.run {
                 self.statusMessage = execution.message
+                if execution.isSuccess, result.providerID == "clipboard" {
+                    let didStartPaste = self.onClipboardPasteRequested?(result) ?? false
+                    if !didStartPaste {
+                        self.statusMessage = "Copied. Allow Accessibility permission to paste automatically."
+                    }
+                }
             }
         }
     }
@@ -197,14 +204,12 @@ final class LauncherViewModel: ObservableObject {
         await activate(feature)
     }
 
-    func activateFeature(at index: Int) {
+    func activateFeature(at index: Int) async {
         guard featureOptions.indices.contains(index) else {
             return
         }
         selectedFeatureIndex = index
-        Task {
-            await activateSelectedFeature()
-        }
+        await activateSelectedFeature()
     }
 
     func exitFeature() -> Bool {

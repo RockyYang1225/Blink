@@ -29,6 +29,29 @@ private struct EmptyQueryProvider: CommandProvider {
     }
 }
 
+private struct ClipboardExecutionProvider: CommandProvider {
+    let id = "clipboard"
+    let displayName = "Clipboard"
+
+    func search(_ query: CommandQuery) async -> [CommandResult] {
+        [
+            CommandResult(
+                id: "clipboard-clip-1",
+                providerID: id,
+                title: "Recent clipboard text",
+                subtitle: "Clipboard text",
+                score: 0.9,
+                primaryAction: .copy,
+                payload: .clipboardItem("clip-1")
+            )
+        ]
+    }
+
+    func execute(_ result: CommandResult, action: CommandAction) async -> CommandExecutionResult {
+        .success(message: "Copied clipboard item")
+    }
+}
+
 @MainActor
 final class LauncherViewModelTests: XCTestCase {
     func testRefreshForPresentationShowsFeatureOptions() async {
@@ -72,5 +95,21 @@ final class LauncherViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isShowingFeatureOptions)
         XCTAssertNil(viewModel.activeFeature)
         XCTAssertEqual(viewModel.results, [])
+    }
+
+    func testExecutingClipboardResultRequestsPasteIntoReturnApplication() async {
+        let engine = CommandEngine(providers: [ClipboardExecutionProvider()])
+        let viewModel = LauncherViewModel(commandEngine: engine)
+        var pastedResultID: String?
+        viewModel.onClipboardPasteRequested = { result in
+            pastedResultID = result.id
+            return true
+        }
+
+        await viewModel.activateFeature(at: 0)
+        viewModel.executeSelected()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(pastedResultID, "clipboard-clip-1")
     }
 }

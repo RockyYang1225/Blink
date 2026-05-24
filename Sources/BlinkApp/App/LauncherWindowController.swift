@@ -1,3 +1,4 @@
+import ApplicationServices
 import SwiftUI
 
 @MainActor
@@ -5,6 +6,7 @@ final class LauncherWindowController {
     private let panel: LauncherPanel
     private let viewModel: LauncherViewModel
     private var keyMonitor: Any?
+    private var returnApplication: NSRunningApplication?
 
     init(viewModel: LauncherViewModel) {
         self.viewModel = viewModel
@@ -33,6 +35,7 @@ final class LauncherWindowController {
     }
 
     func show() {
+        rememberReturnApplication()
         positionOnActiveScreen()
         installKeyMonitor()
         Task { [viewModel] in
@@ -54,6 +57,23 @@ final class LauncherWindowController {
         viewModel.clearTransientState()
     }
 
+    func pasteIntoReturnApplication() -> Bool {
+        guard Self.ensureAccessibilityPermission() else {
+            return false
+        }
+
+        guard let targetApplication = returnApplication else {
+            return false
+        }
+
+        hide()
+        targetApplication.activate(options: [])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            Self.postPasteShortcut()
+        }
+        return true
+    }
+
     private func installKeyMonitor() {
         guard keyMonitor == nil else {
             return
@@ -73,6 +93,19 @@ final class LauncherWindowController {
             NSEvent.removeMonitor(keyMonitor)
         }
         keyMonitor = nil
+    }
+
+    private func rememberReturnApplication() {
+        guard let frontmostApplication = NSWorkspace.shared.frontmostApplication else {
+            returnApplication = nil
+            return
+        }
+
+        if frontmostApplication.bundleIdentifier == Bundle.main.bundleIdentifier {
+            return
+        }
+
+        returnApplication = frontmostApplication
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
@@ -128,6 +161,27 @@ final class LauncherWindowController {
             y: frame.maxY - size.height - 120
         )
         panel.setFrameOrigin(origin)
+    }
+
+    private static func postPasteShortcut() {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let keyCodeForV = CGKeyCode(9)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCodeForV, keyDown: true)
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCodeForV, keyDown: false)
+
+        keyDown?.flags = .maskCommand
+        keyUp?.flags = .maskCommand
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
+    }
+
+    private static func ensureAccessibilityPermission() -> Bool {
+        if AXIsProcessTrusted() {
+            return true
+        }
+
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
     }
 }
 
