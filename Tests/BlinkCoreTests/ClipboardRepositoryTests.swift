@@ -2,7 +2,7 @@ import XCTest
 @testable import BlinkCore
 
 final class ClipboardRepositoryTests: XCTestCase {
-    func testInsertAndRecentReturnsNewestFirstWithPinnedItemsFirst() throws {
+    func testRecentReturnsNewestFirstWithoutPinnedPriority() throws {
         let repository = try makeRepository()
         let older = makeRecord(id: "older", previewText: "Older", createdAt: Date(timeIntervalSince1970: 1))
         let newer = makeRecord(id: "newer", previewText: "Newer", createdAt: Date(timeIntervalSince1970: 2))
@@ -14,7 +14,31 @@ final class ClipboardRepositoryTests: XCTestCase {
 
         let recent = try repository.recent(limit: 10)
 
-        XCTAssertEqual(recent.map(\.id), ["pinned", "newer", "older"])
+        XCTAssertEqual(recent.map(\.id), ["newer", "older", "pinned"])
+    }
+
+    func testSearchReturnsMatchesNewestFirstWithoutPinnedPriority() throws {
+        let repository = try makeRepository()
+        let olderPinned = makeRecord(
+            id: "older-pinned",
+            previewText: "Token older",
+            searchableText: "token older",
+            createdAt: Date(timeIntervalSince1970: 1),
+            pinned: true
+        )
+        let newer = makeRecord(
+            id: "newer",
+            previewText: "Token newer",
+            searchableText: "token newer",
+            createdAt: Date(timeIntervalSince1970: 2)
+        )
+
+        try repository.insert(olderPinned)
+        try repository.insert(newer)
+
+        let matches = try repository.search("token", limit: 10)
+
+        XCTAssertEqual(matches.map(\.id), ["newer", "older-pinned"])
     }
 
     func testSearchUsesFullTextIndex() throws {

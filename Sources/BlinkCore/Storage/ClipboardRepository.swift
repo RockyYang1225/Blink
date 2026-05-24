@@ -27,7 +27,7 @@ public final class ClipboardRepository: @unchecked Sendable {
                 sql: """
                     SELECT * FROM clipboard_items
                     WHERE deleted_at IS NULL
-                    ORDER BY pinned DESC, created_at DESC
+                    ORDER BY created_at DESC, id DESC
                     LIMIT ?
                     """,
                 arguments: [limit]
@@ -60,7 +60,7 @@ public final class ClipboardRepository: @unchecked Sendable {
                     JOIN clipboard_items_fts ON clipboard_items_fts.id = clipboard_items.id
                     WHERE clipboard_items_fts MATCH ?
                       AND clipboard_items.deleted_at IS NULL
-                    ORDER BY clipboard_items.pinned DESC, clipboard_items.created_at DESC
+                    ORDER BY clipboard_items.created_at DESC, clipboard_items.id DESC
                     LIMIT ?
                     """,
                 arguments: [query, limit]
