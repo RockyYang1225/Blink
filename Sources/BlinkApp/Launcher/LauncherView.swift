@@ -71,62 +71,94 @@ struct LauncherView: View {
     }
 
     private var featureOptionsList: some View {
-        List(Array(viewModel.featureOptions.enumerated()), id: \.element.id) { index, feature in
-            HStack(spacing: 12) {
-                Image(systemName: feature.symbolName)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(index == viewModel.selectedFeatureIndex ? Color.accentColor : Color.secondary)
-                    .frame(width: 28)
+        ScrollViewReader { proxy in
+            List(Array(viewModel.featureOptions.enumerated()), id: \.element.id) { index, feature in
+                HStack(spacing: 12) {
+                    Image(systemName: feature.symbolName)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(index == viewModel.selectedFeatureIndex ? Color.accentColor : Color.secondary)
+                        .frame(width: 28)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(feature.title)
-                        .font(.system(size: 15, weight: .medium))
-                        .lineLimit(1)
-                    Text(feature.subtitle)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(feature.title)
+                            .font(.system(size: 15, weight: .medium))
+                            .lineLimit(1)
+                        Text(feature.subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Text("Open")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
-
-                Spacer()
-
-                Text("Open")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .id(feature.id)
+                .padding(.vertical, 7)
+                .listRowBackground(index == viewModel.selectedFeatureIndex ? Color.accentColor.opacity(0.16) : Color.clear)
+                .onTapGesture {
+                    viewModel.activateFeature(at: index)
+                }
             }
-            .padding(.vertical, 7)
-            .listRowBackground(index == viewModel.selectedFeatureIndex ? Color.accentColor.opacity(0.16) : Color.clear)
-            .onTapGesture {
-                viewModel.activateFeature(at: index)
+            .listStyle(.plain)
+            .onChange(of: viewModel.selectedFeatureIndex) { _, _ in
+                scrollSelectedFeature(with: proxy)
             }
         }
-        .listStyle(.plain)
     }
 
     private var resultList: some View {
-        List(Array(viewModel.results.enumerated()), id: \.element.id) { index, result in
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(result.title)
-                        .font(.system(size: 15, weight: .medium))
-                        .lineLimit(1)
-                    Text(result.subtitle)
+        ScrollViewReader { proxy in
+            List(Array(viewModel.results.enumerated()), id: \.element.id) { index, result in
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(result.title)
+                            .font(.system(size: 15, weight: .medium))
+                            .lineLimit(1)
+                        Text(result.subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Text(result.primaryAction.title)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
-                Spacer()
-                Text(result.primaryAction.title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .id(result.id)
+                .padding(.vertical, 6)
+                .listRowBackground(index == viewModel.selectedIndex ? Color.accentColor.opacity(0.16) : Color.clear)
+                .onTapGesture {
+                    viewModel.moveSelection(delta: index - viewModel.selectedIndex)
+                }
             }
-            .padding(.vertical, 6)
-            .listRowBackground(index == viewModel.selectedIndex ? Color.accentColor.opacity(0.16) : Color.clear)
-            .onTapGesture {
-                viewModel.moveSelection(delta: index - viewModel.selectedIndex)
+            .listStyle(.plain)
+            .onChange(of: viewModel.selectedIndex) { _, _ in
+                scrollSelectedResult(with: proxy)
             }
         }
-        .listStyle(.plain)
+    }
+
+    private func scrollSelectedFeature(with proxy: ScrollViewProxy) {
+        guard viewModel.featureOptions.indices.contains(viewModel.selectedFeatureIndex) else {
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.12)) {
+            proxy.scrollTo(viewModel.featureOptions[viewModel.selectedFeatureIndex].id, anchor: .center)
+        }
+    }
+
+    private func scrollSelectedResult(with proxy: ScrollViewProxy) {
+        guard viewModel.results.indices.contains(viewModel.selectedIndex) else {
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.12)) {
+            proxy.scrollTo(viewModel.results[viewModel.selectedIndex].id, anchor: .center)
+        }
     }
 
     private var secondaryActionsView: some View {
